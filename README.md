@@ -4,6 +4,9 @@ It is just a small full-stack app to add cases with different input parameters a
 
 ## Tech stack
 - Node.js
+- pnpm
+- ESLint/Prettier
+- Husky
 - Express.js
 - MongoDB
 - Mongoose
