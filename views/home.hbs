@@ -13,6 +13,10 @@
             max-width: fit-content;
         }
 
+        .list-element p {
+            margin: 0;
+        }
+
         .list-container {
             list-style-type: none;
             padding: 10px;
@@ -49,7 +53,7 @@
             right: 10px;
             /* Adjust the right position as needed */
         }
-        
+
         .rule-visualization p {
             margin: 0;
         }
@@ -59,19 +63,23 @@
 <body>
     <div class="outer-list-container">
         <h1 style="text-align: center;">List of Dehydrator Controllers</h1>
+        {{#if controllers.length}}
         <ul class="list-container">
             {{#each controllers}}
             <li class="list-element">
                 <h2>Controller ID: {{this._id}}</h2>
-                <p>Time: {{formatTimeOfDay this.clock.time}}</p>
-                <p>Indoor Sensor Temperature: {{formatTemperature this.indoorSensor.temperature}}</p>
-                <p>Indoor Sensor Humidity: {{formatHumidity this.indoorSensor.humidity}}</p>
-                <p>Outdoor Sensor Temperature: {{formatTemperature this.outdoorSensor.temperature}}</p>
-                <p>Outdoor Sensor Humidity: {{formatHumidity this.outdoorSensor.humidity}}</p>
-                <p>Mode: {{this.mode}}</p>
+                <p>Time: <b>{{formatTimeOfDay this.clock.time}}</b></p>
+                <p>Indoor Sensor Temperature: <b>{{formatTemperature this.indoorSensor.temperature}}</b></p>
+                <p>Indoor Sensor Humidity: <b>{{formatHumidity this.indoorSensor.humidity}}</b></p>
+                <p>Outdoor Sensor Temperature: <b>{{formatTemperature this.outdoorSensor.temperature}}</b></p>
+                <p>Outdoor Sensor Humidity: <b>{{formatHumidity this.outdoorSensor.humidity}}</b></p>
+                <p>Mode: <b>{{this.mode}}</b></p>
             </li>
             {{/each}}
         </ul>
+        {{else}}
+        <p>List is empty</p>
+        {{/if}}
         <!-- Form for adding a new controller -->
         <form method="POST" action="/add-controller" class="form-container">
             <div style="text-align: left;">
@@ -106,56 +114,96 @@
             // Determine the time of day (day or night)
             const isNightTime = time >= 22 * 60 || time < 6 * 60;
 
+            // Define priority levels for rules
+            const priorityLevels = {
+                "off": 4,
+                "low": 1,
+                "medium": 2,
+                "high": 3,
+            };
+
             // Rule for temperature in the room
-            if (indoorTemperature < 18) {
-                rules.push("Turn off the dehumidifier (Temperature less than 18°C)");
-            } else if (indoorTemperature >= 18 && indoorTemperature < 22) {
-                rules.push("Set dehumidifier to low mode (Temperature 18-22°C)");
+            let temperatureRule = "";
+            if (indoorTemperature >= 18 && indoorTemperature < 22) {
+                temperatureRule = "Set dehumidifier to low mode (Temperature 18-22°C)";
             } else if (indoorTemperature >= 22 && indoorTemperature < 25) {
-                rules.push("Set dehumidifier to medium mode (Temperature 22-25°C)");
-            } else {
-                rules.push("Set dehumidifier to high mode (Temperature more than 25°C)");
+                temperatureRule = "Set dehumidifier to medium mode (Temperature 22-25°C)";
+            } else if (indoorTemperature >= 25) {
+                temperatureRule = "Set dehumidifier to high mode (Temperature more than 25°C)";
+            }
+            if (temperatureRule) {
+                rules.push(temperatureRule);
             }
 
             // Rule for indoor humidity
+            let humidityRule = "";
             if (indoorHumidity < 40) {
-                rules.push("Turn off the dehumidifier (Indoor humidity less than 40%)");
+                humidityRule = "Turn off the dehumidifier (Indoor humidity less than 40%)";
             } else if (indoorHumidity >= 40 && indoorHumidity < 50) {
-                rules.push("Set dehumidifier to low mode (Indoor humidity 40-50%)");
+                humidityRule = "Set dehumidifier to low mode (Indoor humidity 40-50%)";
             } else if (indoorHumidity >= 50 && indoorHumidity < 60) {
-                rules.push("Set dehumidifier to medium mode (Indoor humidity 50-60%)");
+                humidityRule = "Set dehumidifier to medium mode (Indoor humidity 50-60%)";
             } else {
-                rules.push("Set dehumidifier to high mode (Indoor humidity more than 60%)");
+                humidityRule = "Set dehumidifier to high mode (Indoor humidity more than 60%)";
             }
+            rules.push(humidityRule);
 
             // Rule for outdoor temperature
-            if (outdoorTemperature < 10) {
-                rules.push("Turn off the dehumidifier (Outdoor temperature less than 10°C)");
-            } else if (outdoorTemperature >= 10 && outdoorTemperature < 20) {
-                rules.push("Set dehumidifier to low mode (Outdoor temperature 10-20°C)");
-            } else {
-                rules.push("Set dehumidifier to medium mode (Outdoor temperature more than 20°C)");
+            let outdoorTemperatureRule = "";
+            if (outdoorTemperature >= 10 && outdoorTemperature < 20) {
+                outdoorTemperatureRule = "Set dehumidifier to low mode (Outdoor temperature 10-20°C)";
+            } else if (outdoorTemperature >= 20) {
+                outdoorTemperatureRule = "Set dehumidifier to medium mode (Outdoor temperature more than 20°C)";
+            }
+            if (outdoorTemperatureRule) {
+                rules.push(outdoorTemperatureRule);
             }
 
             // Rule for outdoor humidity
-            if (outdoorHumidity < 40) {
-                rules.push("Turn off the dehumidifier (Outdoor humidity less than 40%)");
-            } else if (outdoorHumidity >= 40 && outdoorHumidity < 50) {
-                rules.push("Set dehumidifier to low mode (Outdoor humidity 40-50%)");
+            let outdoorHumidityRule = "";
+            if (outdoorHumidity >= 40 && outdoorHumidity < 50) {
+                outdoorHumidityRule = "Set dehumidifier to low mode (Outdoor humidity 40-50%)";
             } else if (outdoorHumidity >= 50 && outdoorHumidity < 60) {
-                rules.push("Set dehumidifier to medium mode (Outdoor humidity 50-60%)");
-            } else {
-                rules.push("Set dehumidifier to high mode (Outdoor humidity more than 60%)");
+                outdoorHumidityRule = "Set dehumidifier to medium mode (Outdoor humidity 50-60%)";
+            } else if (outdoorHumidity >= 60) {
+                outdoorHumidityRule = "Set dehumidifier to high mode (Outdoor humidity more than 60%)";
+            }
+            if (outdoorHumidityRule) {
+                rules.push(outdoorHumidityRule);
             }
 
-            // Rule for nighttime
+            // Rule for nighttime (highest priority)
             if (isNightTime) {
-                rules.push("<b>Turn off the dehumidifier (Nighttime: 22:00 - 6:00)</b>");
+                rules.push("Turn off the dehumidifier (Nighttime: 22:00 - 6:00)");
             }
+
+            // Sort rules by priority
+            rules.sort((a, b) => {
+                // Check if contains some mode
+                Object.keys(priorityLevels).forEach(mode => {
+                    if (a.toLowerCase().includes(mode)) {
+                        a = mode;
+                    }
+                    if (b.toLowerCase().includes(mode)) {
+                        b = mode;
+                    }
+                });
+
+                // Return the difference in priority levels
+                return priorityLevels[a.toLowerCase()] - priorityLevels[b.toLowerCase()];
+            });
+
+
+            rules[rules.length - 1] = `<b>${rules[rules.length - 1]}</b>`;
 
             // Return the array of applicable rules
             return rules;
         }
+
+        window.onload = function () {
+            showAppliedRules();
+        }
+
         // Function to show or highlight applied rules
         function showAppliedRules() {
             const indoorTemperature = parseFloat(document.querySelector('input[name="indoorTemperature"]').value);

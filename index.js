@@ -10,22 +10,21 @@ const port = process.env.PORT || 3000;
 
 const views = path.join(__dirname, 'views');
 
-hbs.handlebars.registerHelper('formatTemperature', function(temperature) {
-    return `${temperature}°C`; // Replace '°C' with your desired degree symbol
-  });
-  
-  hbs.handlebars.registerHelper('formatHumidity', function(humidity) {
-    return `${humidity}%`;
-  });
-  
-  hbs.handlebars.registerHelper('formatTimeOfDay', function(time) {
-    const hours = Math.floor(time / 60);
-    const minutes = time % 60;
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
-    return `${formattedHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
-  });
-  
+hbs.handlebars.registerHelper('formatTemperature', function (temperature) {
+  return `${temperature}°C`; // Replace '°C' with your desired degree symbol
+});
+
+hbs.handlebars.registerHelper('formatHumidity', function (humidity) {
+  return `${humidity}%`;
+});
+
+hbs.handlebars.registerHelper('formatTimeOfDay', function (time) {
+  const hours = Math.floor(time / 60);
+  const minutes = time % 60;
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
+  return `${formattedHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+});
 
 app.set('view engine', 'hbs');
 app.set('views', views);
@@ -40,61 +39,76 @@ mongoConnect()
   .catch((err) => {
     console.log('Error connecting to MongoDB', err);
   });
-  
-  
-  // Main function to determine the dehumidifier mode
-  function determineDehumidifierMode(indoorTemperature, indoorHumidity, outdoorTemperature, outdoorHumidity, time) {
-    // Define temperature and humidity thresholds
-    const indoorTempThresholds = [18, 22, 25];
-    const indoorHumidityThresholds = [40, 50, 60];
-    const outdoorTempThreshold = 10;
-  
-    // Determine the time of day (day or night)
-    const isNightTime = time >= 22 * 60 || time < 6 * 60;
-  
-    // Initialize mode to "off"
-    let mode = "off";
-  
-    // Check indoor temperature
-    if (indoorTemperature < 18) {
-      mode = "off";
-    } else if (indoorTemperature >= 18 && indoorTemperature < 22) {
-      mode = "low";
-    } else if (indoorTemperature >= 22 && indoorTemperature < 25) {
-      mode = "medium";
-    } else {
-      mode = "high";
-    }
-  
-    // Check indoor humidity
-    if (indoorHumidity < indoorHumidityThresholds[0]) {
-      mode = "off";
-    } else if (indoorHumidity >= indoorHumidityThresholds[0] && indoorHumidity < indoorHumidityThresholds[1]) {
-      mode = "low";
-    } else if (indoorHumidity >= indoorHumidityThresholds[1] && indoorHumidity < indoorHumidityThresholds[2]) {
-      mode = "medium";
-    } else {
-      mode = "high";
-    }
-  
-    // Check outdoor temperature
-    if (outdoorTemperature < outdoorTempThreshold) {
-      mode = "off";
-    } else if (outdoorTemperature >= outdoorTempThreshold && outdoorTemperature < 20) {
-      mode = "low";
-    } else {
-      mode = "medium";
-    }
-  
-    // Apply the time of day rule
-    if (isNightTime) {
-      mode = "off";
-    }
-  
-    return mode;
+
+// Main function to determine the dehumidifier mode
+function determineDehumidifierMode(
+  indoorTemperature,
+  indoorHumidity,
+  outdoorTemperature,
+  outdoorHumidity,
+  time
+) {
+  const rules = [];
+
+  // Determine the time of day (day or night)
+  const isNightTime = time >= 22 * 60 || time < 6 * 60;
+
+  // Define priority levels for rules
+  const priorityLevels = {
+    off: 4,
+    low: 1,
+    medium: 2,
+    high: 3,
+  };
+
+  // Rule for temperature in the room
+  if (indoorTemperature >= 18 && indoorTemperature < 22) {
+    rules.push('low');
+  } else if (indoorTemperature >= 22 && indoorTemperature < 25) {
+    rules.push('medium');
+  } else if (indoorTemperature >= 25) {
+    rules.push('high');
   }
-  
-  
+
+  // Rule for indoor humidity
+  if (indoorHumidity < 40) {
+    rules.push('off');
+  } else if (indoorHumidity >= 40 && indoorHumidity < 50) {
+    rules.push('low');
+  } else if (indoorHumidity >= 50 && indoorHumidity < 60) {
+    rules.push('medium');
+  } else {
+    rules.push('high');
+  }
+
+  // Rule for outdoor temperature
+  if (outdoorTemperature >= 10 && outdoorTemperature < 20) {
+    rules.push('low');
+  } else if (outdoorTemperature >= 20) {
+    rules.push('medium');
+  }
+
+  // Rule for outdoor humidity
+  if (outdoorHumidity >= 40 && outdoorHumidity < 50) {
+    rules.push('low');
+  } else if (outdoorHumidity >= 50 && outdoorHumidity < 60) {
+    rules.push('medium');
+  } else if (outdoorHumidity >= 60) {
+    rules.push('high');
+  }
+
+  // Rule for nighttime (highest priority)
+  if (isNightTime) {
+    rules.push('off');
+  }
+
+  // Sort rules by priority
+  rules.sort((a, b) => priorityLevels[a] - priorityLevels[b]);
+
+  // Return the highest priority rule
+  return rules[rules.length - 1];
+}
+
 app.get('/', async (req, res) => {
   try {
     const controllers = await DehydratorController.find();
@@ -108,7 +122,6 @@ app.get('/', async (req, res) => {
 app.post('/add-controller', async (req, res) => {
   try {
     // Extract data from the form
-    console.log(req.body);
     const {
       time,
       indoorTemperature,
@@ -116,14 +129,14 @@ app.post('/add-controller', async (req, res) => {
       outdoorTemperature,
       outdoorHumidity,
     } = req.body;
-    
+
     const mode = determineDehumidifierMode(
-        Number(indoorTemperature),
-        Number(indoorHumidity),
-        Number(outdoorTemperature),
-        Number(outdoorHumidity),
-        Number(time)
-    )
+      Number(indoorTemperature),
+      Number(indoorHumidity),
+      Number(outdoorTemperature),
+      Number(outdoorHumidity),
+      Number(time)
+    );
 
     // Create a new DehydratorController instance
     const newController = new DehydratorController({
