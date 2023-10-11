@@ -201,6 +201,7 @@
         }
 
         window.onload = function () {
+            fillDefaultRandomValue();
             showAppliedRules();
         }
 
@@ -219,6 +220,14 @@
             const rulesContainer = document.querySelector('.rule-visualization');
 
             rulesContainer.innerHTML = rules.map(rule => `<p>${rule}</p>`).join('');
+        }
+        
+        function fillDefaultRandomValue() {
+            document.querySelector('input[name="time"]').value = Math.floor(Math.random() * 24 * 60);
+            document.querySelector('input[name="indoorTemperature"]').value = Math.floor(Math.random() * 10 + 18);
+            document.querySelector('input[name="indoorHumidity"]').value = Math.floor(Math.random() * 30 + 30);
+            document.querySelector('input[name="outdoorTemperature"]').value = Math.floor(Math.random() * 20 + 10);
+            document.querySelector('input[name="outdoorHumidity"]').value = Math.floor(Math.random() * 30 + 40);
         }
 
         // Event listener for form updates
