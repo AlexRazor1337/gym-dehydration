@@ -1,0 +1,17 @@
+version: "3.9"
+services:
+  mongodb:
+    container_name: 'gym-dehydrator'
+    image: mongo:latest
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+      - ./db/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+    environment:
+      - MONGODB_DATABASE=gymdehydrator
+      - MONGODB_HOST_NAME=localhost
+      - MONGODB_PORT=27017
+volumes:
+  mongodb-data:
