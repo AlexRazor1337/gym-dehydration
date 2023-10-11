@@ -1,19 +1,21 @@
-# node-template
+# gym-dehydration
+This is a small project for university to design a gym dehydration controller expert system.
+It is just a small full-stack app to add cases with different input parameters and get the resulting controller output.
 
-Heavily opiniated template for `Node.js` projects. It has only some basic things setup, so it's suitable for anything.
+## Tech stack
+- Node.js
+- Express.js
+- MongoDB
+- Mongoose
+- Handlebars
+- [tacit](https://yegor256.github.io/tacit/)
 
-Main elements are:
-- **pnpm** - efficient packet manager
-- **nodemon** - restart your app when code changes
-- **eslint** and **prettier** - for code formatting and keeping style uniform
-- **husky** - pre-commit hooks with auto fixing and formating
-
-**NOTE:** **pnpm** and **npm** can be used interchangeably.
-
-## Development
+## How to run
 
 1. `npm i`
 2. `npm run prepare`
+3. *OPTIONAL:* Host a MongoDB instance locally using Docker: `docker-compose up -d`
+4. `npm run start:dev`
 
-## Optional packages
-- [Module Alias](https://www.npmjs.com/package/module-alias) - easier imports
+## Deployment
+The hosted version of this app is deployed on adaptable.io and can be found [here](https://gym-dehydration.adaptable.app/).
