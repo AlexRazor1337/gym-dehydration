@@ -3,7 +3,10 @@
 
 <head>
     <title>List of Dehydrator Controllers</title>
+    <script type="text/javascript"
+        src="https://rawgit.com/grudus/Timepicker/master/dist/grudus-timepicker.es5.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/yegor256/tacit@gh-pages/tacit-css-1.6.0.min.css" />
+    <link href="https://rawgit.com/grudus/Timepicker/master/dist/index.css" type="text/css" rel="stylesheet">
     <style>
         .list-element {
             border: 1px solid black;
@@ -85,7 +88,10 @@
             <div style="text-align: left;">
                 <h2>Add Dehydrator Controller</h2>
                 <label for="time">Time:</label>
-                <input type="number" name="time" required>
+                {{!-- <input type="number" name="time" required> --}}
+                <span><b id="time-res">test</b></span>
+                <button id="tpck">Pick a time</button>
+                <input type="number" name="time" required hidden style="display: none;">
                 <br>
                 <label for="indoorTemperature">Indoor Sensor Temperature:</label>
                 <input type="number" name="indoorTemperature" required>
@@ -108,6 +114,26 @@
         </div>
     </div>
     <script>
+        const initTime = Math.floor(Math.random() * 24 * 60);
+        document.getElementById('tpck').addEventListener('click',
+            function (event) {
+                Timepicker.showPicker({
+                    time: {
+                        hours: Math.floor(initTime / 60),
+                        minutes: initTime % 60
+                    },
+                    onSubmit: (time) => {
+                        console.log(time);
+                        document.getElementById('time-res').textContent = time.formatted();
+                        document.querySelector('input[name="time"]').value = initTime;
+                        showAppliedRules();
+                    },
+                    onCancel: () => { }
+                });
+                // Handle the form data
+                event.preventDefault();
+            });
+
         function determineDehumidifierMode(indoorTemperature, indoorHumidity, outdoorTemperature, outdoorHumidity, time) {
             const rules = [];
 
@@ -178,7 +204,7 @@
             }
 
             // Sort rules by priority
-            
+
             rules.sort((a, b) => {
                 // Check if contains some mode
                 Object.keys(priorityLevels).forEach(mode => {
@@ -212,8 +238,7 @@
             const indoorHumidity = parseFloat(document.querySelector('input[name="indoorHumidity"]').value);
             const outdoorTemperature = parseFloat(document.querySelector('input[name="outdoorTemperature"]').value);
             const outdoorHumidity = parseFloat(document.querySelector('input[name="outdoorHumidity"]').value);
-            const time = parseFloat(document.querySelector('input[name="time"]').value);
-
+            const time = parseInt(document.querySelector('input[name="time"]').value);
             // Determine the dehumidifier mode based on the rules
             const { rules, mode } = determineDehumidifierMode(indoorTemperature, indoorHumidity, outdoorTemperature, outdoorHumidity, time);
 
@@ -222,13 +247,15 @@
 
             rulesContainer.innerHTML = rules.map(rule => `<p>${rule}</p>`).join('');
         }
-        
+
         function fillDefaultRandomValue() {
-            document.querySelector('input[name="time"]').value = Math.floor(Math.random() * 24 * 60);
+            document.querySelector('input[name="time"]').value = initTime;
             document.querySelector('input[name="indoorTemperature"]').value = Math.floor(Math.random() * 10 + 18);
             document.querySelector('input[name="indoorHumidity"]').value = Math.floor(Math.random() * 30 + 30);
             document.querySelector('input[name="outdoorTemperature"]').value = Math.floor(Math.random() * 20 + 10);
             document.querySelector('input[name="outdoorHumidity"]').value = Math.floor(Math.random() * 30 + 40);
+
+            document.getElementById('time-res').textContent = `${Math.floor(initTime / 60)}:${initTime % 60}`;
         }
 
         // Event listener for form updates
