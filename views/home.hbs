@@ -178,6 +178,7 @@
             }
 
             // Sort rules by priority
+            
             rules.sort((a, b) => {
                 // Check if contains some mode
                 Object.keys(priorityLevels).forEach(mode => {
@@ -195,9 +196,9 @@
 
 
             rules[rules.length - 1] = `<b>${rules[rules.length - 1]}</b>`;
-
+            const mode = rules[rules.length - 1].toLowerCase().includes("off") ? "off" : rules[rules.length - 1].toLowerCase().includes("low") ? "low" : rules[rules.length - 1].toLowerCase().includes("medium") ? "medium" : "high";
             // Return the array of applicable rules
-            return rules;
+            return { rules, mode };
         }
 
         window.onload = function () {
@@ -214,7 +215,7 @@
             const time = parseFloat(document.querySelector('input[name="time"]').value);
 
             // Determine the dehumidifier mode based on the rules
-            const rules = determineDehumidifierMode(indoorTemperature, indoorHumidity, outdoorTemperature, outdoorHumidity, time);
+            const { rules, mode } = determineDehumidifierMode(indoorTemperature, indoorHumidity, outdoorTemperature, outdoorHumidity, time);
 
 
             const rulesContainer = document.querySelector('.rule-visualization');
