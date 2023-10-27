@@ -105,6 +105,7 @@
                 <label for="outdoorHumidity">Outdoor Sensor Humidity:</label>
                 <input type="number" name="outdoorHumidity" required>
                 <br>
+                <p>Calculated mode: <b id="calc-mode"></b></p>
                 <br>
             </div>
             <button type="submit">Add Case</button>
@@ -242,7 +243,7 @@
             // Determine the dehumidifier mode based on the rules
             const { rules, mode } = determineDehumidifierMode(indoorTemperature, indoorHumidity, outdoorTemperature, outdoorHumidity, time);
 
-
+            document.getElementById('calc-mode').textContent = mode;
             const rulesContainer = document.querySelector('.rule-visualization');
 
             rulesContainer.innerHTML = rules.map(rule => `<p>${rule}</p>`).join('');
@@ -256,6 +257,7 @@
             document.querySelector('input[name="outdoorHumidity"]').value = Math.floor(Math.random() * 30 + 40);
 
             document.getElementById('time-res').textContent = `${Math.floor(initTime / 60)}:${initTime % 60}`;
+            showAppliedRules()
         }
 
         // Event listener for form updates
